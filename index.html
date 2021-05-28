@@ -1,0 +1,169 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Geometry Conversor</title>
+  <style>
+    
+    #container {
+      max-width: 800px;
+      margin: 2rem auto 0;
+    }
+    .btn-menu{
+      display: flex;
+    }
+    textarea{
+      height: 300px;
+    }
+    .row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+    
+    .column {
+      display: flex;
+      flex-direction: column;
+      flex-basis: 100%;
+      flex: 1;
+      padding: 1rem;
+    }
+    .padding{
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    #results{
+      margin-top: 1rem
+    }
+    .footer{
+      text-align: center;
+      font-size: .9rem;
+      margin-top: 2rem;
+      opacity: .4;
+      transition: opacity .5s;
+    }
+    .footer:hover{
+      opacity: 1;
+      cursor: pointer;
+    }
+  </style>
+  
+  
+  
+  <script type="module" src="https://js.arcgis.com/calcite-components/1.0.0-beta.52/calcite.esm.js"></script>
+  <script nomodule="" src="https://js.arcgis.com/calcite-components/1.0.0-beta.52/calcite.js"></script>
+  
+  <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.0-beta.52/calcite.css" />
+  
+  <link rel="stylesheet" href="https://js.arcgis.com/4.19/esri/themes/light/main.css" />
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+  <!-- and it's easy to individually load additional languages -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/languages/go.min.js"></script>
+</head>
+
+<body>
+  <div id="container"> 
+    
+    <h1 class="padding">Geomeries conversor</h1>
+    
+    
+    <div class='row'>
+      <div class='column'>
+        Sample Geometry in Mercator units (3857)
+        <pre><code class="javascript">{
+  "xmin": -13648495.058561934,
+  "ymin": 4534651.565967717,
+  "xmax": -13609168.207509262,
+  "ymax": 4557353.363368384,
+  "spatialReference": {
+    "wkid": 102100,
+    "latestWkid": 3857
+  }
+}</code></pre>
+      </div>
+      <div class='column'>
+        Sample Geometry in Geographic units (4326)
+        <pre><code class="javascript">{
+  "xmin": -122.6065171633595,
+  "ymin": 37.68236684303815,
+  "xmax": -122.25323804959042,
+  "ymax": 37.84358670736482,
+  "spatialReference": {
+    "wkid": 4326
+  }
+}
+</code></pre>
+        
+      </div>
+    </div>
+    <div class="padding">
+      <calcite-label>Input geometry
+      <calcite-input placeholder="Placeholder" type="textarea" id="geometry"></calcite-input></calcite-label>
+      <p>Convert geometry from:</p>
+    </div>
+    <div class="btn-menu">
+      
+      <div class='row'>
+        <div class='column'>
+          
+          <calcite-button icon-start="deep-learning-project" id="mercator2geo">Web Mercator -> Geographic</calcite-button>
+        </div>
+        <div class='column'>
+          <calcite-button icon-start="deep-learning-project" id="geo2Mercator">Geographic -> Web Mercator</calcite-button>
+        </div>
+      </div>
+    </div>
+    <div style="display:none" id="results" class="padding">
+      Converted geometry:
+      <pre><code id="output" class="javascript"></code></pre>
+    </div>
+    
+    <p class="footer">Made using <a href="http://js.arcgis.com/">API for JavaScript</a> - Fork me on Github</p>
+    
+    <script src="https://js.arcgis.com/4.19/"></script>
+    
+    <script>
+      
+      
+      require(["esri/geometry/support/webMercatorUtils", "esri/geometry/Geometry"], (webMercatorUtils, Geometry) => {
+        hljs.highlightAll();
+        
+        const updateOutput = (transformation) =>{
+          let transformationFunction = null;
+          switch(transformation){
+            case "geo2Mercator":
+            transformationFunction = webMercatorUtils.geographicToWebMercator;
+            break;
+            case "mercator2geo":
+            transformationFunction = webMercatorUtils.webMercatorToGeographic;
+          }
+          try{
+            const obj = JSON.parse(document.querySelector(`#geometry textarea`).value);
+            const geom = transformationFunction(obj);
+            document.getElementById('output').innerText = JSON.stringify(geom, null, 2);
+            hljs.highlightAll();
+          }catch(err){
+            document.getElementById('output').innerText = err;
+          }
+          document.getElementById("results").style.display = "block";
+          
+        };
+        
+        document.getElementById("geo2Mercator").addEventListener('click', (evt) => {
+          evt.preventDefault();
+          updateOutput(evt.target.id);
+          return false;
+        });
+        
+        document.getElementById("mercator2geo").addEventListener('click', (evt) => {
+          evt.preventDefault();
+          updateOutput(evt.target.id);
+          return false;
+        });
+      });
+    </script>
+  </body>
+  </html>
