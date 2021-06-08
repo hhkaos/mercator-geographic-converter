@@ -62,6 +62,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
   <!-- and it's easy to individually load additional languages -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/languages/go.min.js"></script>
+
+  <script src="json-stringify-pretty-compact.js"></script>
 </head>
 
 <body>
@@ -101,7 +103,7 @@
     </div>
     <div class="padding">
       <calcite-label>Input geometry
-      <calcite-input placeholder="Placeholder" type="textarea" id="geometry"></calcite-input></calcite-label>
+      <calcite-input placeholder="Placeholder" type="textarea" id="geometry" value='{ "spatialReference": { "wkid": 102100 }, "rings": [ [ [ 6118187.462239532, 2882908.6239332743 ], [ 6120593.989399323, 2884450.844186426 ], [ 6126378.015927959, 2881537.2209938993 ], [ 6129812.9002211755, 2874778.576282998 ], [ 6123548.3319766475, 2867449.987249655 ], [ 6112623.96019846, 2873542.873095356 ], [ 6118187.462239532, 2882908.6239332743 ] ] ] }'></calcite-input></calcite-label>
       <p>Convert geometry from:</p>
     </div>
     <div class="btn-menu">
@@ -131,6 +133,44 @@
       require(["esri/geometry/support/webMercatorUtils", "esri/geometry/Geometry"], (webMercatorUtils, Geometry) => {
         hljs.highlightAll();
         
+        const reducePrecision = (num) => {
+          
+          if(num % 1 !== 0){
+                // Number has decimals
+                return num.toFixed(6);
+              }else{
+                return num;
+              }
+            
+        }
+        const reducePrecisionLoop = (obj) => {
+          for (const key in obj) {
+            const objType = typeof obj[key];
+
+            if(objType === "object"){
+
+                if(obj[key].constructor === Array){
+                  obj[key] = obj[key].map(el => {
+                    if(typeof el === "object"){
+                      return reducePrecisionLoop(el);
+                    }else{
+                      return reducePrecision(el);
+                    }
+                  });
+                }else{
+                  if(obj[key].toJSON){
+                    reducePrecisionLoop(obj[key].toJSON());
+                  }else{
+                    obj[key]= reducePrecisionLoop(obj[key]);
+                  }
+                }
+            }else if(objType === "number"){
+              obj[key] = reducePrecision(obj[key]);
+            }
+          }
+          return obj;
+        };
+
         const updateOutput = (transformation) =>{
           let transformationFunction = null;
           switch(transformation){
@@ -142,8 +182,10 @@
           }
           try{
             const obj = JSON.parse(document.querySelector(`#geometry textarea`).value);
-            const geom = transformationFunction(obj);
-            document.getElementById('output').innerText = JSON.stringify(geom, null, 2);
+            let geom = transformationFunction(obj);
+            // document.getElementById('output').innerText = JSON.stringify(geom, null, 2);
+            geom = reducePrecisionLoop(geom);
+            document.getElementById('output').innerText = stringify(geom);
             hljs.highlightAll();
           }catch(err){
             document.getElementById('output').innerText = err;
